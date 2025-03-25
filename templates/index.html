@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI海报生成器</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal img {
+            max-width: 90%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">AI海报生成器</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
+            <form id="posterForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 标题 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">标题</label>
+                        <input type="text" name="title" value="XXAI鼠标" 
+                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- 副标题 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">副标题</label>
+                        <input type="text" name="sub_title" value="解放双手的智能办公助手"
+                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- 正文 -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">正文</label>
+                        <textarea name="body_text" rows="3" 
+                                  class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">AI语音控制，智能文字输入，让办公效率提升300%</textarea>
+                    </div>
+
+                    <!-- 提示词 -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">提示词</label>
+                        <input type="text" name="prompt_text_zh" value="科技感，未来感，智能办公，蓝色光效，流线型鼠标"
+                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- 宽高比 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">宽高比</label>
+                        <select name="wh_ratios" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="横版">横版</option>
+                            <option value="竖版">竖版</option>
+                        </select>
+                    </div>
+
+                    <!-- 艺术风格 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">艺术风格</label>
+                        <select name="lora_name" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="2D插画1">2D插画1</option>
+                            <option value="2D插画2">2D插画2</option>
+                            <option value="浩瀚星云">浩瀚星云</option>
+                            <option value="浓郁色彩">浓郁色彩</option>
+                            <option value="光线粒子">光线粒子</option>
+                            <option value="透明玻璃">透明玻璃</option>
+                            <option value="剪纸工艺">剪纸工艺</option>
+                            <option value="折纸工艺">折纸工艺</option>
+                            <option value="中国水墨">中国水墨</option>
+                            <option value="中国刺绣">中国刺绣</option>
+                            <option value="真实场景">真实场景</option>
+                            <option value="2D卡通">2D卡通</option>
+                            <option value="儿童水彩">儿童水彩</option>
+                            <option value="赛博背景">赛博背景</option>
+                            <option value="浅蓝抽象">浅蓝抽象</option>
+                            <option value="深蓝抽象">深蓝抽象</option>
+                            <option value="抽象点线">抽象点线</option>
+                            <option value="童话油画">童话油画</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- API Key -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">阿里云百炼API Key</label>
+                    <input type="password" name="api_key" required
+                           class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <!-- 生成按钮 -->
+                <div class="flex justify-center">
+                    <button type="submit" 
+                            class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                        生成海报
+                    </button>
+                </div>
+            </form>
+
+            <!-- 状态显示 -->
+            <div id="status" class="mt-6 hidden">
+                <div class="flex flex-col items-center justify-center space-y-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                        <span class="text-gray-700">正在生成海报，请稍候...</span>
+                    </div>
+                    <div id="pollingInfo" class="text-sm text-gray-500">
+                        <span id="pollCount">轮询次数: 0</span>
+                        <span class="mx-2">|</span>
+                        <span id="elapsedTime">已用时间: 0秒</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 结果展示 -->
+            <div id="result" class="mt-6 hidden">
+                <h2 class="text-xl font-semibold mb-4 text-center">生成结果</h2>
+                <div id="imageContainer" class="flex justify-center">
+                    <!-- 图片将在这里动态显示 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片预览模态框 -->
+    <div id="imageModal" class="modal">
+        <img id="modalImage" src="" alt="预览图片">
+    </div>
+
+    <script>
+        let startTime = null;
+        let pollCount = 0;
+        let pollInterval = null;
+
+        function updateElapsedTime() {
+            if (startTime) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('elapsedTime').textContent = `已用时间: ${elapsed}秒`;
+            }
+        }
+
+        function startPollingTimer() {
+            startTime = Date.now();
+            pollCount = 0;
+            updateElapsedTime();
+            pollInterval = setInterval(updateElapsedTime, 1000);
+        }
+
+        function stopPollingTimer() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+
+        // 图片预览功能
+        function showImagePreview(imageUrl) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = imageUrl;
+            modal.style.display = 'flex';
+        }
+
+        // 关闭预览
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+
+        document.getElementById('posterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // 验证必填字段
+            const requiredFields = ['title', 'sub_title', 'body_text', 'prompt_text_zh', 'wh_ratios', 'lora_name', 'api_key'];
+            const missingFields = requiredFields.filter(field => !data[field]);
+            
+            if (missingFields.length > 0) {
+                alert(`请填写以下必填字段：${missingFields.join(', ')}`);
+                return;
+            }
+            
+            // 显示状态
+            document.getElementById('status').classList.remove('hidden');
+            document.getElementById('result').classList.add('hidden');
+            startPollingTimer();
+            
+            try {
+                // 发送生成请求
+                const response = await axios.post('/generate', data, {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+                
+                if (response.data.error) {
+                    throw new Error(response.data.error);
+                }
+                
+                const taskId = response.data.task_id;
+                
+                // 开始轮询任务状态
+                pollTaskStatus(taskId);
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.response?.data?.error || error.message || '生成失败，请重试');
+                document.getElementById('status').classList.add('hidden');
+                stopPollingTimer();
+            }
+        });
+
+        async function pollTaskStatus(taskId) {
+            try {
+                const response = await axios.get(`/status/${taskId}`);
+                
+                if (response.data.error) {
+                    throw new Error(response.data.error);
+                }
+                
+                const status = response.data.status;
+                pollCount++;
+                document.getElementById('pollCount').textContent = `轮询次数: ${pollCount}`;
+                
+                if (status === 'SUCCEEDED') {
+                    // 显示结果
+                    document.getElementById('status').classList.add('hidden');
+                    document.getElementById('result').classList.remove('hidden');
+                    stopPollingTimer();
+                    
+                    const imageContainer = document.getElementById('imageContainer');
+                    imageContainer.innerHTML = '';
+                    
+                    // 显示生成的图片
+                    if (response.data.result && response.data.result.image_url) {
+                        const img = document.createElement('img');
+                        img.src = response.data.result.image_url;
+                        img.alt = '生成的海报';
+                        img.className = 'max-w-full h-auto rounded-lg shadow-md cursor-pointer hover:opacity-90 transition-opacity';
+                        img.onclick = () => showImagePreview(response.data.result.image_url);
+                        imageContainer.appendChild(img);
+                    } else {
+                        throw new Error('未获取到图片URL');
+                    }
+                } else if (status === 'FAILED') {
+                    alert('生成失败：' + (response.data.error_message || '未知错误'));
+                    document.getElementById('status').classList.add('hidden');
+                    stopPollingTimer();
+                } else {
+                    // 继续轮询
+                    setTimeout(() => pollTaskStatus(taskId), 2000);
+                }
+            } catch (error) {
+                console.error('Error polling status:', error);
+                alert(error.response?.data?.error || error.message || '获取状态失败，请重试');
+                document.getElementById('status').classList.add('hidden');
+                stopPollingTimer();
+            }
+        }
+    </script>
+</body>
+</html> 
