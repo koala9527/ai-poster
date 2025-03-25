@@ -24,118 +24,147 @@
             max-height: 90vh;
             object-fit: contain;
         }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content {
+            flex: 1;
+        }
+        .footer {
+            margin-top: auto;
+            padding: 1rem 0;
+        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">AI海报生成器</h1>
-        
-        <div class="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
-            <form id="posterForm" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- 标题 -->
+<body class="bg-gray-100">
+    <div class="main-content">
+        <div class="container mx-auto px-4 py-8">
+            <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">AI海报生成器</h1>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
+                <form id="posterForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- 标题 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">标题</label>
+                            <input type="text" name="title" value="XXAI鼠标" 
+                                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- 副标题 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">副标题</label>
+                            <input type="text" name="sub_title" value="解放双手的智能办公助手"
+                                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- 正文 -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">正文</label>
+                            <textarea name="body_text" rows="3" 
+                                      class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">AI语音控制，智能文字输入，让办公效率提升300%</textarea>
+                        </div>
+
+                        <!-- 提示词 -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">提示词</label>
+                            <input type="text" name="prompt_text_zh" value="科技感，未来感，智能办公，蓝色光效，流线型鼠标"
+                                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- 宽高比 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">宽高比</label>
+                            <select name="wh_ratios" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="横版">横版</option>
+                                <option value="竖版">竖版</option>
+                            </select>
+                        </div>
+
+                        <!-- 艺术风格 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">艺术风格</label>
+                            <select name="lora_name" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="2D插画1">2D插画1</option>
+                                <option value="2D插画2">2D插画2</option>
+                                <option value="浩瀚星云">浩瀚星云</option>
+                                <option value="浓郁色彩">浓郁色彩</option>
+                                <option value="光线粒子">光线粒子</option>
+                                <option value="透明玻璃">透明玻璃</option>
+                                <option value="剪纸工艺">剪纸工艺</option>
+                                <option value="折纸工艺">折纸工艺</option>
+                                <option value="中国水墨">中国水墨</option>
+                                <option value="中国刺绣">中国刺绣</option>
+                                <option value="真实场景">真实场景</option>
+                                <option value="2D卡通">2D卡通</option>
+                                <option value="儿童水彩">儿童水彩</option>
+                                <option value="赛博背景">赛博背景</option>
+                                <option value="浅蓝抽象">浅蓝抽象</option>
+                                <option value="深蓝抽象">深蓝抽象</option>
+                                <option value="抽象点线">抽象点线</option>
+                                <option value="童话油画">童话油画</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- API Key -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">标题</label>
-                        <input type="text" name="title" value="XXAI鼠标" 
+                        <label class="block text-sm font-medium text-gray-700 mb-2">阿里云百炼API Key</label>
+                        <input type="password" name="api_key" required
                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
-                    <!-- 副标题 -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">副标题</label>
-                        <input type="text" name="sub_title" value="解放双手的智能办公助手"
-                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <!-- 生成按钮 -->
+                    <div class="flex justify-center">
+                        <button type="submit" 
+                                class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                            生成海报
+                        </button>
                     </div>
+                </form>
 
-                    <!-- 正文 -->
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">正文</label>
-                        <textarea name="body_text" rows="3" 
-                                  class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">AI语音控制，智能文字输入，让办公效率提升300%</textarea>
-                    </div>
-
-                    <!-- 提示词 -->
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">提示词</label>
-                        <input type="text" name="prompt_text_zh" value="科技感，未来感，智能办公，蓝色光效，流线型鼠标"
-                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-
-                    <!-- 宽高比 -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">宽高比</label>
-                        <select name="wh_ratios" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="横版">横版</option>
-                            <option value="竖版">竖版</option>
-                        </select>
-                    </div>
-
-                    <!-- 艺术风格 -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">艺术风格</label>
-                        <select name="lora_name" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="2D插画1">2D插画1</option>
-                            <option value="2D插画2">2D插画2</option>
-                            <option value="浩瀚星云">浩瀚星云</option>
-                            <option value="浓郁色彩">浓郁色彩</option>
-                            <option value="光线粒子">光线粒子</option>
-                            <option value="透明玻璃">透明玻璃</option>
-                            <option value="剪纸工艺">剪纸工艺</option>
-                            <option value="折纸工艺">折纸工艺</option>
-                            <option value="中国水墨">中国水墨</option>
-                            <option value="中国刺绣">中国刺绣</option>
-                            <option value="真实场景">真实场景</option>
-                            <option value="2D卡通">2D卡通</option>
-                            <option value="儿童水彩">儿童水彩</option>
-                            <option value="赛博背景">赛博背景</option>
-                            <option value="浅蓝抽象">浅蓝抽象</option>
-                            <option value="深蓝抽象">深蓝抽象</option>
-                            <option value="抽象点线">抽象点线</option>
-                            <option value="童话油画">童话油画</option>
-                        </select>
+                <!-- 状态显示 -->
+                <div id="status" class="mt-6 hidden">
+                    <div class="flex flex-col items-center justify-center space-y-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                            <span class="text-gray-700">正在生成海报，请稍候...</span>
+                        </div>
+                        <div id="pollingInfo" class="text-sm text-gray-500">
+                            <span id="pollCount">轮询次数: 0</span>
+                            <span class="mx-2">|</span>
+                            <span id="elapsedTime">已用时间: 0秒</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- API Key -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">阿里云百炼API Key</label>
-                    <input type="password" name="api_key" required
-                           class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-
-                <!-- 生成按钮 -->
-                <div class="flex justify-center">
-                    <button type="submit" 
-                            class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                        生成海报
-                    </button>
-                </div>
-            </form>
-
-            <!-- 状态显示 -->
-            <div id="status" class="mt-6 hidden">
-                <div class="flex flex-col items-center justify-center space-y-4">
-                    <div class="flex items-center space-x-2">
-                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                        <span class="text-gray-700">正在生成海报，请稍候...</span>
+                <!-- 结果展示 -->
+                <div id="result" class="mt-6 hidden">
+                    <h2 class="text-xl font-semibold mb-4 text-center">生成结果</h2>
+                    <div id="imageContainer" class="flex justify-center">
+                        <!-- 图片将在这里动态显示 -->
                     </div>
-                    <div id="pollingInfo" class="text-sm text-gray-500">
-                        <span id="pollCount">轮询次数: 0</span>
-                        <span class="mx-2">|</span>
-                        <span id="elapsedTime">已用时间: 0秒</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 结果展示 -->
-            <div id="result" class="mt-6 hidden">
-                <h2 class="text-xl font-semibold mb-4 text-center">生成结果</h2>
-                <div id="imageContainer" class="flex justify-center">
-                    <!-- 图片将在这里动态显示 -->
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- 底部固定链接 -->
+    <footer class="footer">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <a href="https://github.com/koala9527/ai-poster" target="_blank" 
+                   class="inline-flex items-center text-gray-500 hover:text-gray-900 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    GitHub 项目地址
+                </a>
+            </div>
+        </div>
+    </footer>
 
     <!-- 图片预览模态框 -->
     <div id="imageModal" class="modal">
