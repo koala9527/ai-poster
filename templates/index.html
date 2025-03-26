@@ -33,16 +33,48 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.9);
             z-index: 1000;
             justify-content: center;
             align-items: center;
+            cursor: zoom-out;
         }
         .modal img {
             max-width: 90%;
             max-height: 90vh;
             object-fit: contain;
             border-radius: 8px;
+            cursor: default;
+            transition: transform 0.3s ease;
+        }
+        /* 添加生成图片的鼠标样式 */
+        #posterImage {
+            cursor: zoom-in;
+            transition: transform 0.2s ease;
+        }
+        #posterImage:hover {
+            transform: scale(1.02);
+        }
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90vh;
+            object-fit: contain;
+            transform-origin: center center;
+            transition: transform 0.1s ease;
         }
     </style>
 </head>
@@ -198,6 +230,12 @@
                 <!-- 结果展示 -->
                 <div id="result" class="mt-8 text-center">
                     <img id="posterImage" class="max-w-full mx-auto rounded-lg shadow-lg hidden" alt="生成的海报">
+                    <button id="downloadBtn" class="mt-4 bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors hidden flex items-center justify-center mx-auto space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        <span>下载海报</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -214,8 +252,10 @@
     </footer>
 
     <!-- 图片预览模态框 -->
-    <div id="imageModal" class="modal hidden">
-        <img id="modalImage" src="" alt="预览图片">
+    <div id="imageModal" class="image-modal" onclick="closeImageModal()">
+        <img id="modalImage" src="" alt="预览图片" 
+             onclick="event.stopPropagation()"
+             onwheel="handleImageZoom(event)">
     </div>
 
     <script>
@@ -224,6 +264,10 @@
         let pollInterval = null;
         let generatePromptTimeout = null;
         let generatePosterTimeout = null;
+        let currentScale = 1;
+        const SCALE_STEP = 0.1;
+        const MIN_SCALE = 0.5;
+        const MAX_SCALE = 3;
 
         // 防抖函数
         function debounce(func, wait) {
@@ -291,20 +335,58 @@
             }
         }
 
-        // 图片预览功能
+        // 显示图片预览
         function showImagePreview(imageUrl) {
             const modal = document.getElementById('imageModal');
-            const modalImg = document.getElementById('modalImage');
-            modalImg.src = imageUrl;
-            modal.classList.remove('hidden');
+            const modalImage = document.getElementById('modalImage');
+            
+            // 重置缩放
+            currentScale = 1;
+            modalImage.style.transform = 'scale(1)';
+            
+            modalImage.src = imageUrl;
+            modal.style.display = 'flex';
         }
 
         // 关闭预览
-        document.getElementById('imageModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.classList.add('hidden');
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+            // 重置缩放
+            currentScale = 1;
+            document.getElementById('modalImage').style.transform = 'scale(1)';
+        }
+
+        // 添加键盘事件支持
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('imageModal');
+                if (!modal.classList.contains('hidden')) {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }
             }
         });
+
+        function handleImageZoom(event) {
+            event.preventDefault();
+            
+            // 确定缩放方向
+            const delta = event.deltaY < 0 ? 1 : -1;
+            
+            // 计算新的缩放值
+            let newScale = currentScale + (delta * SCALE_STEP);
+            
+            // 限制缩放范围
+            newScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
+            
+            // 应用缩放
+            const modalImage = document.getElementById('modalImage');
+            modalImage.style.transform = `scale(${newScale})`;
+            
+            // 更新当前缩放值
+            currentScale = newScale;
+        }
 
         // 生成海报的主要函数
         const generatePoster = async () => {
@@ -417,8 +499,30 @@
                     
                     // 显示生成的图片
                     if (response.data.result && response.data.result.image_url) {
+                        const imageModal = document.getElementById('imageModal');
+                        const modalImage = document.getElementById('modalImage');
+                        
                         posterImage.src = response.data.result.image_url;
+                        posterImage.classList.remove('hidden');
                         posterImage.onclick = () => showImagePreview(response.data.result.image_url);
+
+                        const downloadBtn = document.getElementById('downloadBtn');
+                        const imageUrl = response.data.result.image_url;
+                        
+                        // 显示并设置下载按钮
+                        downloadBtn.classList.remove('hidden');
+                        downloadBtn.onclick = function() {
+                            // 创建一个隐藏的 a 标签直接触发下载
+                            const a = document.createElement('a');
+                            a.href = imageUrl;
+                            a.download = `AI海报_${new Date().getTime()}.png`; // 文件名
+                            a.target = '_blank'; // 在新标签页打开
+                            a.style.display = 'none';
+                            
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        };
                     } else {
                         throw new Error('未获取到图片URL');
                     }
