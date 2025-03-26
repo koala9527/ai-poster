@@ -12,6 +12,16 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from openai import OpenAI
 import re
+import logging
+from datetime import datetime
+
+# 配置日志记录
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 # 加载环境变量
 load_dotenv()
@@ -41,22 +51,16 @@ client = OpenAI(
 )
 
 # 系统提示词
-SYSTEM_PROMPT = """你是一个专业的营销文案生成助手。请根据用户提供的产品描述，生成以下四个要素，并严格遵守字数限制：
+SYSTEM_PROMPT = """
+你是一个专业的营销文案撰写专家。请按照以下格式生成营销文案：
 
-1. 标题：简短有力，突出产品核心价值（最多30字）
-2. 副标题：补充说明产品主要特点（最多30字）
-3. 正文：详细描述产品优势，使用数据支撑（最多50字）
-4. 提示词：用于AI绘画的关键词，包含产品特征、风格、场景等（最多50字）
+标题：[简短有力的主标题，不超过30字]
+副标题：[补充说明主标题，不超过30字]
+正文：[详细描述产品特点和优势，不超过50字]
+提示词：[用于生成图片的中文提示词，描述期望的视觉效果，不超过50字]
 
-请以JSON格式返回，格式如下：
-{
-    "title": "标题(限30字)",
-    "sub_title": "副标题(限30字)",
-    "body_text": "正文(限50字)",
-    "prompt_text_zh": "提示词(限50字)"
-}
-
-注意：请严格控制每个字段的字数，超出部分会被截断。"""
+请确保每个部分都有内容，并严格按照这个格式输出。
+"""
 
 class PosterRequest(BaseModel):
     title: str
@@ -250,56 +254,111 @@ async def get_task_status(task_id: str):
             "error_message": str(e)
         }
 
+def parse_generated_text(text: str) -> dict:
+    """
+    解析AI生成的文本，提取标题、副标题、正文和提示词
+    """
+    try:
+        logger.info("开始解析文本")
+        # 初始化结果字典
+        result = {
+            "title": "",
+            "sub_title": "",
+            "body_text": "",
+            "prompt_text_zh": ""
+        }
+        
+        # 按行分割文本
+        lines = text.strip().split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            # 解析每一行
+            if line.startswith("标题："):
+                result["title"] = line.replace("标题：", "").strip()
+            elif line.startswith("副标题："):
+                result["sub_title"] = line.replace("副标题：", "").strip()
+            elif line.startswith("正文："):
+                result["body_text"] = line.replace("正文：", "").strip()
+            elif line.startswith("提示词："):
+                result["prompt_text_zh"] = line.replace("提示词：", "").strip()
+        
+        logger.info(f"解析结果: {result}")
+        
+        # 验证所有必需字段都已填充
+        if not all(result.values()):
+            missing_fields = [k for k, v in result.items() if not v]
+            logger.warning(f"部分字段未解析到: {missing_fields}")
+            raise ValueError(f"生成的文本格式不完整，缺少字段: {', '.join(missing_fields)}")
+            
+        return result
+        
+    except Exception as e:
+        logger.error(f"解析文本时发生错误: {str(e)}")
+        logger.exception(e)
+        raise
+
 @app.post("/generate_prompt")
 async def generate_prompt(request: Request):
     try:
+        logger.info("开始处理生成提示词请求")
+        
         data = await request.json()
-        product_desc = data.get("product_desc")
+        product_desc = data.get("product_desc", "")
+        logger.info(f"收到的产品描述: {product_desc}")
         
         if not product_desc:
             raise HTTPException(status_code=400, detail="产品描述不能为空")
 
-        # 调用硅基流动API
-        response = client.chat.completions.create(
-            model="deepseek-ai/DeepSeek-V3",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": f"请为以下产品生成营销文案：{product_desc}"}
-            ],
-            temperature=0.7,
-            max_tokens=1024
-        )
-
-        # 获取生成的文本
-        generated_text = response.choices[0].message.content
-        
-        # 尝试解析JSON
+        logger.info("准备调用 DeepSeek API")
         try:
-            result = json.loads(generated_text)
-        except json.JSONDecodeError:
-            # 如果无法直接解析JSON，尝试提取JSON部分
-            json_match = re.search(r'\{.*\}', generated_text, re.DOTALL)
-            if json_match:
-                result = json.loads(json_match.group())
-            else:
-                raise HTTPException(status_code=500, detail="无法解析AI生成的文本")
+            response = client.chat.completions.create(
+                model="deepseek-ai/DeepSeek-V3",
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": f"请为以下产品生成营销文案：{product_desc}"}
+                ],
+                temperature=0.7,
+                max_tokens=1024
+            )
+            logger.info("DeepSeek API 调用成功")
 
-        # 验证返回的JSON格式并限制字数
-        required_fields = ["title", "sub_title", "body_text", "prompt_text_zh"]
-        for field in required_fields:
-            if field not in result:
-                raise HTTPException(status_code=500, detail=f"AI生成的内容缺少必要字段：{field}")
+        except Exception as api_error:
+            logger.error(f"调用 DeepSeek API 时发生错误: {str(api_error)}")
+            logger.exception(api_error)
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI 接口调用失败: {str(api_error)}"
+            )
+
+        generated_text = response.choices[0].message.content
+        logger.info(f"生成的原始文本: {generated_text}")
+
+        try:
+            parsed_result = parse_generated_text(generated_text)
+            logger.info(f"最终解析结果: {parsed_result}")
+            return parsed_result
             
-        # 截断超出长度的文本
-        result["title"] = result["title"][:30]
-        result["sub_title"] = result["sub_title"][:30]
-        result["body_text"] = result["body_text"][:50]
-        result["prompt_text_zh"] = result["prompt_text_zh"][:50]
+        except Exception as parse_error:
+            logger.error(f"解析生成的文本时发生错误: {str(parse_error)}")
+            logger.exception(parse_error)
+            raise HTTPException(
+                status_code=500,
+                detail=f"解析生成的文本失败: {str(parse_error)}"
+            )
 
-        return result
-
+    except HTTPException as http_error:
+        raise http_error
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"处理请求时发生未预期的错误: {str(e)}")
+        logger.exception(e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"服务器内部错误: {str(e)}"
+        )
 
 if __name__ == "__main__":
     import uvicorn

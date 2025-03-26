@@ -28,7 +28,7 @@ COPY requirements.txt .
 COPY app.py .
 COPY templates/ templates/
 COPY static/ static/
-
+COPY .env .
 # 安装 Python 依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
