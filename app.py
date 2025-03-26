@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, Form, HTTPException, UploadFile, File
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from typing import Optional
 import httpx
 import json
@@ -10,6 +10,8 @@ from typing import Dict, Any
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from openai import OpenAI
+import re
 
 # 加载环境变量
 load_dotenv()
@@ -25,6 +27,37 @@ templates = Jinja2Templates(directory="templates")
 # 存储任务状态的内存字典
 tasks: Dict[str, Dict[str, Any]] = {}
 
+# 硅基流动API配置
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "your_siliconflow_api_key_here")
+SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1"
+
+# 阿里云百炼API配置
+DEFAULT_BAILIAN_API_KEY = os.getenv("DEFAULT_BAILIAN_API_KEY", "your_default_key_here")
+
+# 创建硅基流动客户端
+client = OpenAI(
+    api_key=SILICONFLOW_API_KEY,
+    base_url=SILICONFLOW_BASE_URL
+)
+
+# 系统提示词
+SYSTEM_PROMPT = """你是一个专业的营销文案生成助手。请根据用户提供的产品描述，生成以下四个要素，并严格遵守字数限制：
+
+1. 标题：简短有力，突出产品核心价值（最多30字）
+2. 副标题：补充说明产品主要特点（最多30字）
+3. 正文：详细描述产品优势，使用数据支撑（最多50字）
+4. 提示词：用于AI绘画的关键词，包含产品特征、风格、场景等（最多50字）
+
+请以JSON格式返回，格式如下：
+{
+    "title": "标题(限30字)",
+    "sub_title": "副标题(限30字)",
+    "body_text": "正文(限50字)",
+    "prompt_text_zh": "提示词(限50字)"
+}
+
+注意：请严格控制每个字段的字数，超出部分会被截断。"""
+
 class PosterRequest(BaseModel):
     title: str
     sub_title: str
@@ -32,7 +65,7 @@ class PosterRequest(BaseModel):
     prompt_text_zh: str
     wh_ratios: str
     lora_name: str
-    api_key: str
+    api_key: Optional[str] = None
 
 @app.get("/")
 async def home(request: Request):
@@ -46,15 +79,18 @@ async def generate_poster(
     prompt_text_zh: str = Form(...),
     wh_ratios: str = Form(...),
     lora_name: str = Form(...),
-    api_key: str = Form(...)
+    api_key: Optional[str] = Form(None)
 ):
     try:
         # 验证必填字段
-        if not all([title, sub_title, body_text, prompt_text_zh, wh_ratios, lora_name, api_key]):
+        if not all([title, sub_title, body_text, prompt_text_zh, wh_ratios, lora_name]):
             return JSONResponse(
                 status_code=400,
                 content={"error": "所有字段都是必填的"}
             )
+
+        # 使用提供的API Key或默认值
+        used_api_key = api_key if api_key else DEFAULT_BAILIAN_API_KEY
 
         # 构建请求数据
         data = {
@@ -81,7 +117,7 @@ async def generate_poster(
                 response = await client.post(
                     "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis",
                     headers={
-                        "Authorization": f"Bearer {api_key}",
+                        "Authorization": f"Bearer {used_api_key}",
                         "Content-Type": "application/json",
                         "X-DashScope-Async": "enable"
                     },
@@ -112,7 +148,7 @@ async def generate_poster(
                     "status": "PENDING",
                     "data": data,
                     "result": None,
-                    "api_key": api_key  # 存储API密钥用于后续查询
+                    "api_key": used_api_key  # 存储API密钥用于后续查询
                 }
                 
                 return {"task_id": task_id}
@@ -151,9 +187,12 @@ async def get_task_status(task_id: str):
     # 如果任务还在进行中，查询最新状态
     try:
         async with httpx.AsyncClient() as client:
+            # 使用存储的API key或默认值
+            used_api_key = task.get('api_key') or DEFAULT_BAILIAN_API_KEY
+            
             response = await client.get(
                 f"https://dashscope.aliyuncs.com/api/v1/tasks/{task_id}",
-                headers={"Authorization": f"Bearer {task['api_key']}"},
+                headers={"Authorization": f"Bearer {used_api_key}"},
                 timeout=30.0
             )
             
@@ -208,6 +247,57 @@ async def get_task_status(task_id: str):
             "status": "FAILED",
             "error_message": str(e)
         }
+
+@app.post("/generate_prompt")
+async def generate_prompt(request: Request):
+    try:
+        data = await request.json()
+        product_desc = data.get("product_desc")
+        
+        if not product_desc:
+            raise HTTPException(status_code=400, detail="产品描述不能为空")
+
+        # 调用硅基流动API
+        response = client.chat.completions.create(
+            model="deepseek-ai/DeepSeek-V3",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"请为以下产品生成营销文案：{product_desc}"}
+            ],
+            temperature=0.7,
+            max_tokens=1024
+        )
+
+        # 获取生成的文本
+        generated_text = response.choices[0].message.content
+        
+        # 尝试解析JSON
+        try:
+            result = json.loads(generated_text)
+        except json.JSONDecodeError:
+            # 如果无法直接解析JSON，尝试提取JSON部分
+            json_match = re.search(r'\{.*\}', generated_text, re.DOTALL)
+            if json_match:
+                result = json.loads(json_match.group())
+            else:
+                raise HTTPException(status_code=500, detail="无法解析AI生成的文本")
+
+        # 验证返回的JSON格式并限制字数
+        required_fields = ["title", "sub_title", "body_text", "prompt_text_zh"]
+        for field in required_fields:
+            if field not in result:
+                raise HTTPException(status_code=500, detail=f"AI生成的内容缺少必要字段：{field}")
+            
+        # 截断超出长度的文本
+        result["title"] = result["title"][:30]
+        result["sub_title"] = result["sub_title"][:30]
+        result["body_text"] = result["body_text"][:50]
+        result["prompt_text_zh"] = result["prompt_text_zh"][:50]
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

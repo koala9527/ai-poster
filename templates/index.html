@@ -48,30 +48,52 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- 标题 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">标题</label>
-                            <input type="text" name="title" value="XXAI鼠标" 
+                            <label class="block text-sm font-medium text-gray-700 mb-2">标题 <span class="text-gray-500 text-xs">(最多30字)</span></label>
+                            <input type="text" name="title" maxlength="30"
                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
 
                         <!-- 副标题 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">副标题</label>
-                            <input type="text" name="sub_title" value="解放双手的智能办公助手"
+                            <label class="block text-sm font-medium text-gray-700 mb-2">副标题 <span class="text-gray-500 text-xs">(最多30字)</span></label>
+                            <input type="text" name="sub_title" maxlength="30"
                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
 
                         <!-- 正文 -->
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">正文</label>
-                            <textarea name="body_text" rows="3" 
-                                      class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">AI语音控制，智能文字输入，让办公效率提升300%</textarea>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">正文 <span class="text-gray-500 text-xs">(最多50字)</span></label>
+                            <textarea name="body_text" rows="3" maxlength="50"
+                                      class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
                         </div>
 
                         <!-- 提示词 -->
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">提示词</label>
-                            <input type="text" name="prompt_text_zh" value="科技感，未来感，智能办公，蓝色光效，流线型鼠标"
+                            <label class="block text-sm font-medium text-gray-700 mb-2">提示词 <span class="text-gray-500 text-xs">(最多50字)</span></label>
+                            <input type="text" name="prompt_text_zh" maxlength="50"
                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- AI提示词生成 -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">AI提示词生成</label>
+                            <div class="flex space-x-4">
+                                <input type="text" id="aiPromptInput" placeholder="请输入产品描述，AI将帮您生成标题、副标题、正文和提示词"
+                                       class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <button type="button" id="generatePromptBtn"
+                                        class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <span class="inline-flex items-center">
+                                        <span class="generate-text">生成提示词</span>
+                                        <span class="loading-spinner hidden inline-flex items-center">
+                                            <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>生成中...</span>
+                                        </span>
+                                    </span>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- 宽高比 -->
@@ -111,16 +133,25 @@
 
                     <!-- API Key -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">阿里云百炼API Key</label>
-                        <input type="password" name="api_key" required
+                        <label class="block text-sm font-medium text-gray-700 mb-2">阿里云百炼API Key <span class="text-gray-500 text-xs">(选填，不填使用默认key)</span></label>
+                        <input type="password" name="api_key"
                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <!-- 生成按钮 -->
                     <div class="flex justify-center">
-                        <button type="submit" 
-                                class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                            生成海报
+                        <button type="button" id="generatePosterBtn"
+                                class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span class="inline-flex items-center">
+                                <span class="generate-poster-text">生成海报</span>
+                                <span class="loading-spinner-poster hidden inline-flex items-center">
+                                    <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>生成中...</span>
+                                </span>
+                            </span>
                         </button>
                     </div>
                 </form>
@@ -128,10 +159,6 @@
                 <!-- 状态显示 -->
                 <div id="status" class="mt-6 hidden">
                     <div class="flex flex-col items-center justify-center space-y-4">
-                        <div class="flex items-center space-x-2">
-                            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                            <span class="text-gray-700">正在生成海报，请稍候...</span>
-                        </div>
                         <div id="pollingInfo" class="text-sm text-gray-500">
                             <span id="pollCount">轮询次数: 0</span>
                             <span class="mx-2">|</span>
@@ -175,6 +202,53 @@
         let startTime = null;
         let pollCount = 0;
         let pollInterval = null;
+        let generatePromptTimeout = null;
+        let generatePosterTimeout = null;
+
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // 更新生成提示词按钮状态
+        function updateGeneratePromptButton(isLoading) {
+            const button = document.getElementById('generatePromptBtn');
+            const generateText = button.querySelector('.generate-text');
+            const loadingSpinner = button.querySelector('.loading-spinner');
+            
+            button.disabled = isLoading;
+            if (isLoading) {
+                generateText.classList.add('hidden');
+                loadingSpinner.classList.remove('hidden');
+            } else {
+                generateText.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        // 更新生成海报按钮状态
+        function updateGeneratePosterButton(isLoading) {
+            const button = document.getElementById('generatePosterBtn');
+            const generateText = button.querySelector('.generate-poster-text');
+            const loadingSpinner = button.querySelector('.loading-spinner-poster');
+            
+            button.disabled = isLoading;
+            if (isLoading) {
+                generateText.classList.add('hidden');
+                loadingSpinner.classList.remove('hidden');
+            } else {
+                generateText.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+            }
+        }
 
         function updateElapsedTime() {
             if (startTime) {
@@ -212,14 +286,14 @@
             }
         });
 
-        document.getElementById('posterForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(e.target);
+        // 生成海报的主要函数
+        const generatePoster = async () => {
+            const form = document.getElementById('posterForm');
+            const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
             
             // 验证必填字段
-            const requiredFields = ['title', 'sub_title', 'body_text', 'prompt_text_zh', 'wh_ratios', 'lora_name', 'api_key'];
+            const requiredFields = ['title', 'sub_title', 'body_text', 'prompt_text_zh', 'wh_ratios', 'lora_name'];
             const missingFields = requiredFields.filter(field => !data[field]);
             
             if (missingFields.length > 0) {
@@ -231,6 +305,7 @@
             document.getElementById('status').classList.remove('hidden');
             document.getElementById('result').classList.add('hidden');
             startPollingTimer();
+            updateGeneratePosterButton(true);
             
             try {
                 // 发送生成请求
@@ -253,8 +328,15 @@
                 alert(error.response?.data?.error || error.message || '生成失败，请重试');
                 document.getElementById('status').classList.add('hidden');
                 stopPollingTimer();
+                updateGeneratePosterButton(false);
             }
-        });
+        };
+
+        // 使用防抖包装生成海报函数
+        const debouncedGeneratePoster = debounce(generatePoster, 500);
+
+        // 添加按钮点击事件
+        document.getElementById('generatePosterBtn').addEventListener('click', debouncedGeneratePoster);
 
         async function pollTaskStatus(taskId) {
             try {
@@ -273,6 +355,7 @@
                     document.getElementById('status').classList.add('hidden');
                     document.getElementById('result').classList.remove('hidden');
                     stopPollingTimer();
+                    updateGeneratePosterButton(false);
                     
                     const imageContainer = document.getElementById('imageContainer');
                     imageContainer.innerHTML = '';
@@ -292,6 +375,7 @@
                     alert('生成失败：' + (response.data.error_message || '未知错误'));
                     document.getElementById('status').classList.add('hidden');
                     stopPollingTimer();
+                    updateGeneratePosterButton(false);
                 } else {
                     // 继续轮询
                     setTimeout(() => pollTaskStatus(taskId), 2000);
@@ -301,8 +385,54 @@
                 alert(error.response?.data?.error || error.message || '获取状态失败，请重试');
                 document.getElementById('status').classList.add('hidden');
                 stopPollingTimer();
+                updateGeneratePosterButton(false);
             }
         }
+
+        // 字符限制处理函数
+        function truncateText(text, maxLength) {
+            return text.length > maxLength ? text.substring(0, maxLength) : text;
+        }
+
+        // AI提示词生成功能
+        const generatePrompt = async () => {
+            const aiPromptInput = document.getElementById('aiPromptInput');
+            const productDesc = aiPromptInput.value.trim();
+            
+            if (!productDesc) {
+                alert('请输入产品描述');
+                return;
+            }
+
+            updateGeneratePromptButton(true);
+
+            try {
+                const response = await axios.post('/generate_prompt', {
+                    product_desc: productDesc
+                });
+
+                if (response.data.error) {
+                    throw new Error(response.data.error);
+                }
+
+                // 填充生成的文本并进行长度限制
+                document.querySelector('input[name="title"]').value = truncateText(response.data.title, 30);
+                document.querySelector('input[name="sub_title"]').value = truncateText(response.data.sub_title, 30);
+                document.querySelector('textarea[name="body_text"]').value = truncateText(response.data.body_text, 50);
+                document.querySelector('input[name="prompt_text_zh"]').value = truncateText(response.data.prompt_text_zh, 50);
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.response?.data?.error || error.message || '生成提示词失败，请重试');
+            } finally {
+                updateGeneratePromptButton(false);
+            }
+        };
+
+        // 使用防抖包装生成函数
+        const debouncedGeneratePrompt = debounce(generatePrompt, 500);
+
+        // 添加按钮点击事件
+        document.getElementById('generatePromptBtn').addEventListener('click', debouncedGeneratePrompt);
     </script>
 </body>
 </html> 
