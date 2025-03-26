@@ -72,15 +72,15 @@ async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/generate")
-async def generate_poster(
-    title: str = Form(...),
-    sub_title: str = Form(...),
-    body_text: str = Form(...),
-    prompt_text_zh: str = Form(...),
-    wh_ratios: str = Form(...),
-    lora_name: str = Form(...),
-    api_key: Optional[str] = Form(None)
-):
+async def generate_poster(request: Request):
+    data = await request.json()
+    title: str = data["title"]
+    sub_title: str = data["sub_title"]
+    body_text: str = data["body_text"]
+    prompt_text_zh: str = data["prompt_text_zh"]
+    wh_ratios: str = data["wh_ratios"]
+    lora_name: str = data["lora_name"]
+    api_key: Optional[str] = data.get("api_key")
     try:
         # 验证必填字段
         if not all([title, sub_title, body_text, prompt_text_zh, wh_ratios, lora_name]):
@@ -114,6 +114,7 @@ async def generate_poster(
         # 调用阿里云API
         async with httpx.AsyncClient() as client:
             try:
+                print(f"API REQUEST: {data}")
                 response = await client.post(
                     "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis",
                     headers={
@@ -126,7 +127,8 @@ async def generate_poster(
                 )
                 
                 response_text = response.text
-                print(f"API Response: {response_text}")
+        
+                print(f"API RESPONSE: {response_text}")
                 
                 if response.status_code != 200:
                     return JSONResponse(

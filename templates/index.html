@@ -4,9 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI海报生成器</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
+        .main-content {
+            min-height: calc(100vh - 40px);
+            padding-bottom: 40px;
+        }
+        .footer {
+            height: 40px;
+            width: 100%;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
         .modal {
             display: none;
             position: fixed;
@@ -23,92 +42,107 @@
             max-width: 90%;
             max-height: 90vh;
             object-fit: contain;
-        }
-        body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .main-content {
-            flex: 1;
-        }
-        .footer {
-            margin-top: auto;
-            padding: 1rem 0;
+            border-radius: 8px;
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50">
     <div class="main-content">
-        <div class="container mx-auto px-4 py-8">
-            <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">AI海报生成器</h1>
-            
-            <div class="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
-                <form id="posterForm" class="space-y-6">
+        <!-- 顶部介绍区域 -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-12 mb-8">
+            <div class="container mx-auto px-4">
+                <h1 class="text-4xl font-bold text-center mb-4">AI海报生成器</h1>
+                <p class="text-xl text-center max-w-3xl mx-auto">
+                    基于阿里云百炼平台文生图能力的智能海报生成工具，集成硅基流动大模型，快速生成精美的营销海报。
+                </p>
+            </div>
+        </div>
+
+        <!-- 功能特点展示 -->
+        <div class="container mx-auto px-4 mb-12">
+            <h2 class="text-2xl font-bold text-center mb-8">功能特点</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="feature-card bg-white p-6 rounded-lg shadow">
+                    <div class="text-3xl mb-4">🤖</div>
+                    <h3 class="font-bold mb-2">智能文案生成</h3>
+                    <p class="text-gray-600 text-sm">基于硅基流动 DeepSeek-V3 大模型，一键生成标题、副标题和文案</p>
+                </div>
+                <div class="feature-card bg-white p-6 rounded-lg shadow">
+                    <div class="text-3xl mb-4">🎨</div>
+                    <h3 class="font-bold mb-2">多种艺术风格</h3>
+                    <p class="text-gray-600 text-sm">支持2D插画、浩瀚星云、中国水墨、剪纸工艺等多种风格</p>
+                </div>
+                <div class="feature-card bg-white p-6 rounded-lg shadow">
+                    <div class="text-3xl mb-4">📐</div>
+                    <h3 class="font-bold mb-2">灵活尺寸比例</h3>
+                    <p class="text-gray-600 text-sm">支持横版和竖版海报，满足不同场景需求</p>
+                </div>
+                <div class="feature-card bg-white p-6 rounded-lg shadow">
+                    <div class="text-3xl mb-4">⚡</div>
+                    <h3 class="font-bold mb-2">实时状态更新</h3>
+                    <p class="text-gray-600 text-sm">显示生成进度和耗时，让您了解每一步</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要功能区域 -->
+        <div class="container mx-auto px-4">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- 左侧：AI提示词生成 -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold mb-4">AI提示词生成</h3>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">产品描述</label>
+                            <textarea id="productDescription" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入产品描述，AI将为您生成合适的文案"></textarea>
+                        </div>
+                        <button id="generatePromptBtn" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2">
+                            <span class="loading-spinner hidden">
+                                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                            <span class="button-text">生成提示词</span>
+                        </button>
+                    </div>
+
+                    <!-- 右侧：海报内容填写 -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold mb-4">海报内容</h3>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">标题 (最多30字)</label>
+                            <input type="text" id="title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入标题">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">副标题 (最多30字)</label>
+                            <input type="text" id="subtitle" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入副标题">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">正文内容 (最多50字)</label>
+                            <textarea id="content" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入正文内容"></textarea>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">提示词 (最多50字)</label>
+                            <input type="text" id="prompt" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入提示词，描述期望的艺术风格">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 海报样式选择 -->
+                <div class="mt-8 space-y-4">
+                    <h3 class="text-lg font-semibold mb-4">海报样式</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- 标题 -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">标题 <span class="text-gray-500 text-xs">(最多30字)</span></label>
-                            <input type="text" name="title" maxlength="30"
-                                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-
-                        <!-- 副标题 -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">副标题 <span class="text-gray-500 text-xs">(最多30字)</span></label>
-                            <input type="text" name="sub_title" maxlength="30"
-                                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-
-                        <!-- 正文 -->
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">正文 <span class="text-gray-500 text-xs">(最多50字)</span></label>
-                            <textarea name="body_text" rows="3" maxlength="50"
-                                      class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
-                        </div>
-
-                        <!-- 提示词 -->
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">提示词 <span class="text-gray-500 text-xs">(最多50字)</span></label>
-                            <input type="text" name="prompt_text_zh" maxlength="50"
-                                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-
-                        <!-- AI提示词生成 -->
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">AI提示词生成</label>
-                            <div class="flex space-x-4">
-                                <input type="text" id="aiPromptInput" placeholder="请输入产品描述，AI将帮您生成标题、副标题、正文和提示词"
-                                       class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <button type="button" id="generatePromptBtn"
-                                        class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <span class="inline-flex items-center">
-                                        <span class="generate-text">生成提示词</span>
-                                        <span class="loading-spinner hidden inline-flex items-center">
-                                            <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            <span>生成中...</span>
-                                        </span>
-                                    </span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- 宽高比 -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">宽高比</label>
-                            <select name="wh_ratios" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">宽高比</label>
+                            <select id="ratio" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="横版">横版</option>
                                 <option value="竖版">竖版</option>
                             </select>
                         </div>
-
-                        <!-- 艺术风格 -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">艺术风格</label>
-                            <select name="lora_name" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">艺术风格</label>
+                            <select id="style" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="2D插画1">2D插画1</option>
                                 <option value="2D插画2">2D插画2</option>
                                 <option value="浩瀚星云">浩瀚星云</option>
@@ -130,71 +164,57 @@
                             </select>
                         </div>
                     </div>
+                </div>
 
-                    <!-- API Key -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">阿里云百炼API Key <span class="text-gray-500 text-xs">(选填，不填使用默认key)</span></label>
-                        <input type="password" name="api_key"
-                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <!-- API Key输入（可选） -->
+                <div class="mt-8">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">阿里云 API Key（可选）</label>
+                        <input type="text" id="apiKey" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="不填则使用默认key">
                     </div>
+                </div>
 
-                    <!-- 生成按钮 -->
-                    <div class="flex justify-center">
-                        <button type="button" id="generatePosterBtn"
-                                class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                            <span class="inline-flex items-center">
-                                <span class="generate-poster-text">生成海报</span>
-                                <span class="loading-spinner-poster hidden inline-flex items-center">
-                                    <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span>生成中...</span>
-                                </span>
-                            </span>
-                        </button>
-                    </div>
-                </form>
+                <!-- 生成按钮 -->
+                <div class="mt-8">
+                    <button id="generatePosterBtn" type="button" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-md hover:from-blue-700 hover:to-indigo-700 transition-colors flex items-center justify-center space-x-2">
+                        <span class="loading-spinner hidden">
+                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
+                        <span class="button-text">生成海报</span>
+                    </button>
+                </div>
 
                 <!-- 状态显示 -->
-                <div id="status" class="mt-6 hidden">
-                    <div class="flex flex-col items-center justify-center space-y-4">
-                        <div id="pollingInfo" class="text-sm text-gray-500">
-                            <span id="pollCount">轮询次数: 0</span>
-                            <span class="mx-2">|</span>
-                            <span id="elapsedTime">已用时间: 0秒</span>
-                        </div>
+                <div id="status" class="mt-6 text-center text-gray-600 hidden">
+                    <div class="space-y-2">
+                        <p id="pollCount">轮询次数: 0</p>
+                        <p id="elapsedTime">已用时间: 0秒</p>
                     </div>
                 </div>
 
                 <!-- 结果展示 -->
-                <div id="result" class="mt-6 hidden">
-                    <h2 class="text-xl font-semibold mb-4 text-center">生成结果</h2>
-                    <div id="imageContainer" class="flex justify-center">
-                        <!-- 图片将在这里动态显示 -->
-                    </div>
+                <div id="result" class="mt-8 text-center">
+                    <img id="posterImage" class="max-w-full mx-auto rounded-lg shadow-lg hidden" alt="生成的海报">
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 底部固定链接 -->
+    <!-- 页脚 -->
     <footer class="footer">
-        <div class="container mx-auto px-4">
-            <div class="text-center">
-                <a href="https://github.com/koala9527/ai-poster" target="_blank" 
-                   class="inline-flex items-center text-gray-500 hover:text-gray-900 transition-colors">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                    </svg>
-                    GitHub 项目地址
-                </a>
-            </div>
-        </div>
+        <a href="https://github.com/koala9527/ai-poster" target="_blank" class="text-gray-400 text-xs flex items-center space-x-1 no-underline">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            <span>项目地址</span>
+        </a>
     </footer>
 
     <!-- 图片预览模态框 -->
-    <div id="imageModal" class="modal">
+    <div id="imageModal" class="modal hidden">
         <img id="modalImage" src="" alt="预览图片">
     </div>
 
@@ -221,7 +241,7 @@
         // 更新生成提示词按钮状态
         function updateGeneratePromptButton(isLoading) {
             const button = document.getElementById('generatePromptBtn');
-            const generateText = button.querySelector('.generate-text');
+            const generateText = button.querySelector('.button-text');
             const loadingSpinner = button.querySelector('.loading-spinner');
             
             button.disabled = isLoading;
@@ -237,8 +257,8 @@
         // 更新生成海报按钮状态
         function updateGeneratePosterButton(isLoading) {
             const button = document.getElementById('generatePosterBtn');
-            const generateText = button.querySelector('.generate-poster-text');
-            const loadingSpinner = button.querySelector('.loading-spinner-poster');
+            const generateText = button.querySelector('.button-text');
+            const loadingSpinner = button.querySelector('.loading-spinner');
             
             button.disabled = isLoading;
             if (isLoading) {
@@ -276,21 +296,33 @@
             const modal = document.getElementById('imageModal');
             const modalImg = document.getElementById('modalImage');
             modalImg.src = imageUrl;
-            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
         }
 
         // 关闭预览
         document.getElementById('imageModal').addEventListener('click', function(e) {
             if (e.target === this) {
-                this.style.display = 'none';
+                this.classList.add('hidden');
             }
         });
 
         // 生成海报的主要函数
         const generatePoster = async () => {
-            const form = document.getElementById('posterForm');
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
+            // 直接从输入框获取值
+            const data = {
+                title: document.getElementById('title').value.trim(),
+                sub_title: document.getElementById('subtitle').value.trim(),
+                body_text: document.getElementById('content').value.trim(),
+                prompt_text_zh: document.getElementById('prompt').value.trim(),
+                wh_ratios: document.getElementById('ratio').value,
+                lora_name: document.getElementById('style').value
+            };
+            
+            // 如果API Key不为空，才添加到请求数据中
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (apiKey) {
+                data.api_key = apiKey;
+            }
             
             // 验证必填字段
             const requiredFields = ['title', 'sub_title', 'body_text', 'prompt_text_zh', 'wh_ratios', 'lora_name'];
@@ -298,6 +330,24 @@
             
             if (missingFields.length > 0) {
                 alert(`请填写以下必填字段：${missingFields.join(', ')}`);
+                return;
+            }
+
+            // 验证字段长度
+            if (data.title.length > 30) {
+                alert('标题不能超过30个字符');
+                return;
+            }
+            if (data.sub_title.length > 30) {
+                alert('副标题不能超过30个字符');
+                return;
+            }
+            if (data.body_text.length > 50) {
+                alert('正文内容不能超过50个字符');
+                return;
+            }
+            if (data.prompt_text_zh.length > 50) {
+                alert('提示词不能超过50个字符');
                 return;
             }
             
@@ -308,10 +358,11 @@
             updateGeneratePosterButton(true);
             
             try {
+                console.log('发送的数据:', data); // 调试用
                 // 发送生成请求
                 const response = await axios.post('/generate', data, {
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                        'Content-Type': 'application/json'
                     }
                 });
                 
@@ -325,7 +376,12 @@
                 pollTaskStatus(taskId);
             } catch (error) {
                 console.error('Error:', error);
-                alert(error.response?.data?.error || error.message || '生成失败，请重试');
+                let errorMessage = '生成失败，请重试';
+                if (error.response) {
+                    console.error('Error response:', error.response.data); // 调试用
+                    errorMessage = error.response.data.detail || error.response.data.message || errorMessage;
+                }
+                alert(errorMessage);
                 document.getElementById('status').classList.add('hidden');
                 stopPollingTimer();
                 updateGeneratePosterButton(false);
@@ -354,20 +410,15 @@
                     // 显示结果
                     document.getElementById('status').classList.add('hidden');
                     document.getElementById('result').classList.remove('hidden');
+                    const posterImage = document.getElementById('posterImage');
+                    posterImage.classList.remove('hidden');
                     stopPollingTimer();
                     updateGeneratePosterButton(false);
                     
-                    const imageContainer = document.getElementById('imageContainer');
-                    imageContainer.innerHTML = '';
-                    
                     // 显示生成的图片
                     if (response.data.result && response.data.result.image_url) {
-                        const img = document.createElement('img');
-                        img.src = response.data.result.image_url;
-                        img.alt = '生成的海报';
-                        img.className = 'max-w-full h-auto rounded-lg shadow-md cursor-pointer hover:opacity-90 transition-opacity';
-                        img.onclick = () => showImagePreview(response.data.result.image_url);
-                        imageContainer.appendChild(img);
+                        posterImage.src = response.data.result.image_url;
+                        posterImage.onclick = () => showImagePreview(response.data.result.image_url);
                     } else {
                         throw new Error('未获取到图片URL');
                     }
@@ -396,7 +447,7 @@
 
         // AI提示词生成功能
         const generatePrompt = async () => {
-            const aiPromptInput = document.getElementById('aiPromptInput');
+            const aiPromptInput = document.getElementById('productDescription');
             const productDesc = aiPromptInput.value.trim();
             
             if (!productDesc) {
@@ -415,11 +466,11 @@
                     throw new Error(response.data.error);
                 }
 
-                // 填充生成的文本并进行长度限制
-                document.querySelector('input[name="title"]').value = truncateText(response.data.title, 30);
-                document.querySelector('input[name="sub_title"]').value = truncateText(response.data.sub_title, 30);
-                document.querySelector('textarea[name="body_text"]').value = truncateText(response.data.body_text, 50);
-                document.querySelector('input[name="prompt_text_zh"]').value = truncateText(response.data.prompt_text_zh, 50);
+                // 使用正确的ID获取输入框元素
+                document.getElementById('title').value = truncateText(response.data.title, 30);
+                document.getElementById('subtitle').value = truncateText(response.data.sub_title, 30);
+                document.getElementById('content').value = truncateText(response.data.body_text, 50);
+                document.getElementById('prompt').value = truncateText(response.data.prompt_text_zh, 50);
             } catch (error) {
                 console.error('Error:', error);
                 alert(error.response?.data?.error || error.message || '生成提示词失败，请重试');
